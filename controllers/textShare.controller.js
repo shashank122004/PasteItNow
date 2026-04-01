@@ -17,7 +17,7 @@ const uploadText = async (req , res)=>{
             })
         }
         const params = {
-            TableName: "pasteItNow_text",
+            TableName: process.env.TABLE_NAME,
             Item: {
                 pasteId: pasteId,
                 content: content
@@ -43,7 +43,7 @@ const getText = async(req,res)=>{
     try{
         const {pasteId} =req.params;
         const result = await ddbDocClient.send(new GetCommand({
-            TableName: "pasteItNow_text",
+            TableName: process.env.TABLE_NAME,
             Key:{
                 pasteId: pasteId
             }
