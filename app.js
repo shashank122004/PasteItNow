@@ -2,6 +2,7 @@ const express = require('express');
 const router = require('./routes/textShare.route');
 const app = express();
 const cors = require('cors');
+const FileRouter = require('./routes/fileShare.route');
 
 app.use(cors());
 app.use(express.json());
@@ -22,5 +23,6 @@ app.get("/default/", (req,res)=>{
 });
 
 app.use("/default/text", router);
+app.use("/default/file", require('./routes/fileShare.route'));
 
 module.exports = app;

@@ -19,9 +19,7 @@
       --error-bg: #fdecec;
       --error-text: #a12626;
       --error-border: #f5bcbc;
-      --placeholder-bg: #f9fbfd;
-      --placeholder-text: #4b647a;
-      --shadow: 0 4px 12px rgba(0,0,0,0.08);
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     }
 
     body.dark {
@@ -38,9 +36,7 @@
       --error-bg: #2a1616;
       --error-text: #ff8d8d;
       --error-border: #5e2b2b;
-      --placeholder-bg: #11151c;
-      --placeholder-text: #9fb2c5;
-      --shadow: 0 4px 16px rgba(0,0,0,0.35);
+      --shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
     }
 
     * {
@@ -80,10 +76,15 @@
       border: 1px solid var(--border);
       background: var(--card);
       color: var(--text);
-      padding: 10px 16px;
-      border-radius: 10px;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
       cursor: pointer;
       box-shadow: var(--shadow);
+      font-size: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .theme-toggle:hover {
@@ -140,9 +141,10 @@
       background: var(--muted-bg);
       border: 1px solid var(--border);
       border-radius: 8px;
-      min-height: 80px;
+      min-height: 120px;
       white-space: pre-wrap;
       word-wrap: break-word;
+      line-height: 1.5;
     }
 
     .main-grid {
@@ -176,6 +178,7 @@
     }
 
     input[type="text"],
+    input[type="file"],
     textarea {
       width: 100%;
       padding: 12px;
@@ -191,19 +194,32 @@
       resize: vertical;
     }
 
-    button.upload-btn {
+    .upload-btn,
+    .download-btn {
       width: 100%;
       padding: 14px;
       border: none;
-      background: #28a745;
       color: white;
       font-size: 16px;
       border-radius: 8px;
       cursor: pointer;
+      margin-top: 8px;
     }
 
-    button.upload-btn:hover {
+    .upload-btn {
+      background: #28a745;
+    }
+
+    .upload-btn:hover {
       background: #1f7f36;
+    }
+
+    .download-btn {
+      background: var(--primary);
+    }
+
+    .download-btn:hover {
+      background: var(--primary-hover);
     }
 
     .message {
@@ -225,19 +241,28 @@
       border: 1px solid var(--error-border);
     }
 
-    .project-placeholder {
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 2px dashed var(--border);
-      border-radius: 10px;
-      background: var(--placeholder-bg);
-      color: var(--placeholder-text);
-      text-align: center;
-      padding: 20px;
-      font-size: 18px;
+    .info-box {
+      margin-top: 15px;
+      padding: 14px;
+      background: var(--muted-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
       line-height: 1.6;
+      font-size: 14px;
+    }
+
+    .file-meta {
+      margin-top: 12px;
+      padding: 12px;
+      background: var(--muted-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    .download-link-wrap {
+      margin-top: 14px;
     }
 
     @media (max-width: 900px) {
@@ -251,7 +276,7 @@
   <div class="container">
     <div class="page-header">
       <h1>PasteItNow</h1>
-      <button class="theme-toggle" onclick="toggleTheme()">🌙 Toggle Dark Mode</button>
+      <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()">🌙</button>
     </div>
 
     <div class="top-bar">
@@ -261,6 +286,15 @@
         <button onclick="getText()">Get Content</button>
       </div>
       <div class="output-box" id="retrievedContent">Retrieved content will appear here...</div>
+
+      <hr style="margin: 24px 0; border-color: var(--border);" />
+
+      <h2>Retrieve File</h2>
+      <div class="retrieve-box">
+        <input type="text" id="retrieveFileKey" placeholder="Enter file key to retrieve file" />
+        <button onclick="getFile()">Get File</button>
+      </div>
+      <div class="output-box" id="retrievedFileMessage">File retrieval status will appear here...</div>
     </div>
 
     <div class="main-grid">
@@ -283,33 +317,47 @@
       </div>
 
       <div class="card">
-        <h2>Projects / Future Features</h2>
-        <div class="project-placeholder">
-          This section is reserved for future project features.<br><br>
-          You can later add:
-          <br>• File Upload
-          <br>• Recent Pastes
-          <br>• Expiry Options
-          <br>• Sharing Links
-          <br>• Syntax Highlighting
+        <h2>File Transfer</h2>
+
+        <div class="form-group">
+          <label for="fileKey">File Key</label>
+          <input type="text" id="fileKey" placeholder="Enter file key (required)" />
         </div>
+
+        <div class="form-group">
+          <label for="fileInput">Choose File</label>
+          <input type="file" id="fileInput" />
+        </div>
+
+        <button class="upload-btn" onclick="handleFileUpload()">Upload File</button>
+
+        <div id="fileMessage"></div>
+        <div id="fileMeta" class="file-meta" style="display:none;"></div>
+        <div id="downloadSection" class="download-link-wrap"></div>
       </div>
     </div>
   </div>
 
   <script>
-    const BASE_URL = "https://rkeza33ile.execute-api.ap-south-1.amazonaws.com/default/text";
+    const TEXT_API = "https://rkeza33ile.execute-api.ap-south-1.amazonaws.com/default/text";
+    const FILE_API = "https://rkeza33ile.execute-api.ap-south-1.amazonaws.com/default/file";
 
     function toggleTheme() {
       document.body.classList.toggle("dark");
       const isDark = document.body.classList.contains("dark");
+      document.getElementById("themeBtn").textContent = isDark ? "☀️" : "🌙";
       localStorage.setItem("pasteitnow-theme", isDark ? "dark" : "light");
     }
 
     function loadTheme() {
       const savedTheme = localStorage.getItem("pasteitnow-theme");
+      const btn = document.getElementById("themeBtn");
+
       if (savedTheme === "dark") {
         document.body.classList.add("dark");
+        btn.textContent = "☀️";
+      } else {
+        btn.textContent = "🌙";
       }
     }
 
@@ -328,7 +376,7 @@
       }
 
       try {
-        const response = await fetch(`${BASE_URL}/upload-text`, {
+        const response = await fetch(`${TEXT_API}/upload-text`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -369,10 +417,9 @@
       outputBox.textContent = "Loading...";
 
       try {
-        const response = await fetch(`${BASE_URL}/get-text/${pasteId}`);
+        const response = await fetch(`${TEXT_API}/get-text/${pasteId}`);
         const data = await response.json();
-        console.log(data);
-        
+
         if (data.status === "success" && data.content) {
           outputBox.textContent = data.content;
         } else {
@@ -381,6 +428,152 @@
       } catch (error) {
         outputBox.textContent = "Error retrieving content.";
         console.error("Retrieve error:", error);
+      }
+    }
+
+    async function getFile() {
+      const fileKey = document.getElementById("retrieveFileKey").value.trim();
+      const outputBox = document.getElementById("retrievedFileMessage");
+
+      if (!fileKey) {
+        outputBox.textContent = "Please enter a file key.";
+        return;
+      }
+
+      outputBox.textContent = "Loading...";
+
+      try {
+        const response = await fetch(`${FILE_API}/get-file/${encodeURIComponent(fileKey)}`);
+        const data = await response.json();
+
+        if (data.status === "success" && data.url) {
+          outputBox.innerHTML = `
+            <div class="message success">Download link ready.</div>
+            <div class="info-box"><a href="${data.url}" target="_blank" rel="noopener noreferrer">Download file</a></div>
+          `;
+        } else {
+          outputBox.innerHTML = `<div class="message error">${data.message || "File not found."}</div>`;
+        }
+      } catch (error) {
+        outputBox.innerHTML = `<div class="message error">Error retrieving file.</div>`;
+        console.error("File retrieve error:", error);
+      }
+    }
+
+    async function handleFileUpload() {
+      const fileKeyInput = document.getElementById("fileKey");
+      const userFileKey = fileKeyInput.value.trim();
+      const fileInput = document.getElementById("fileInput");
+      const file = fileInput.files[0];
+      const messageBox = document.getElementById("fileMessage");
+      const fileMetaBox = document.getElementById("fileMeta");
+      const downloadSection = document.getElementById("downloadSection");
+
+      messageBox.innerHTML = "";
+      fileMetaBox.style.display = "none";
+      fileMetaBox.innerHTML = "";
+      downloadSection.innerHTML = "";
+
+      if (!userFileKey) {
+        messageBox.innerHTML = `
+          <div class="message error">File Key is required.</div>
+        `;
+        return;
+      }
+
+      if (!file) {
+        messageBox.innerHTML = `
+          <div class="message error">Please select a file first.</div>
+        `;
+        return;
+      }
+
+      try {
+        messageBox.innerHTML = `
+          <div class="message">Preparing upload...</div>
+        `;
+
+        const fileKey = userFileKey;
+        const contentType = file.type || "application/octet-stream";
+        const originalFileName = file.name;
+
+        fileMetaBox.style.display = "block";
+        fileMetaBox.innerHTML = `
+          <strong>Original Name:</strong> ${originalFileName}<br>
+          <strong>Content Type:</strong> ${contentType}<br>
+          <strong>File Key:</strong> ${fileKey}
+        `;
+
+        const response = await fetch(`${FILE_API}/upload-file`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            fileKey,
+            contentType: contentType,
+            originalFileName: originalFileName
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.status !== "success") {
+          throw new Error(data.message || "Failed to get presigned URL");
+        }
+
+        messageBox.innerHTML = `
+          <div class="message">Uploading file to storage...</div>
+        `;
+
+        const uploadResponse = await fetch(data.presignedUrl, {
+          method: "PUT",
+          headers: {
+            "Content-Type": contentType
+          },
+          body: file
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error("Failed to upload file to S3");
+        }
+
+        messageBox.innerHTML = `
+          <div class="message success">File uploaded successfully.</div>
+        `;
+
+        const downloadApiUrl = `${FILE_API}/download-file?fileKey=${encodeURIComponent(data.fileKey)}`;
+
+        downloadSection.innerHTML = `
+          <button class="download-btn" onclick="downloadFile('${encodeURIComponent(data.fileKey)}')">
+            Download File
+          </button>
+          <div class="info-box">
+            <strong>Download API:</strong><br>
+            ${downloadApiUrl}
+          </div>
+        `;
+      } catch (error) {
+        console.error("File upload error:", error);
+        messageBox.innerHTML = `
+          <div class="message error">${error.message || "File upload failed."}</div>
+        `;
+      }
+    }
+
+    async function downloadFile(encodedFileKey) {
+      try {
+        const response = await fetch(`${FILE_API}/download-file?fileKey=${encodedFileKey}`);
+        const data = await response.json();
+
+        if (data.status !== "success" || !data.presignedUrl) {
+          throw new Error(data.message || "Failed to get download URL");
+        }
+
+        window.open(data.presignedUrl, "_blank");
+      } catch (error) {
+        console.error("Download error:", error);
+        alert(error.message || "Failed to download file");
       }
     }
 
