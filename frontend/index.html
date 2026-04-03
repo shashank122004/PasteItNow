@@ -529,13 +529,15 @@
         const uploadResponse = await fetch(data.presignedUrl, {
           method: "PUT",
           headers: {
-            "Content-Type": contentType
+            "Content-Type": contentType || "application/octet-stream"
           },
           body: file
         });
 
         if (!uploadResponse.ok) {
-          throw new Error("Failed to upload file to S3");
+          const errorText = await uploadResponse.text();
+          console.error("S3 Upload Error:", uploadResponse.status, errorText);
+          throw new Error(`Failed to upload file to S3: ${uploadResponse.status} ${uploadResponse.statusText}`);
         }
 
         messageBox.innerHTML = `

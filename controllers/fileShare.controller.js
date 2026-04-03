@@ -5,7 +5,7 @@ const {PutCommand} = require("@aws-sdk/lib-dynamodb");
 
 const s3Client= new S3Client(
     {
-        region: "ap-south-1"
+        region: "ap-south-1",
     }
 )
 
@@ -46,6 +46,7 @@ const PutObjectUrl = async (req, res) => {
             })
         );
 
+    
         return res.status(200).json({
             message: "Presigned URL generated successfully",
             status: "success",
