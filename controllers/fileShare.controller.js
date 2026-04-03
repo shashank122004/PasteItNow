@@ -1,11 +1,11 @@
 const {S3Client, PutObjectCommand, GetObjectCommand} =require("@aws-sdk/client-s3");
 const {getSignedUrl} = require("@aws-sdk/s3-request-presigner"); 
 const ddbDocClient = require('../db.js');
-const {PutCommand} = require("@aws-sdk/lib-dynamodb");
+const {PutCommand,GetCommand} = require("@aws-sdk/lib-dynamodb");
 
 const s3Client= new S3Client(
     {
-        region: "ap-south-1",
+        region: "ap-south-1"
     }
 )
 
@@ -46,7 +46,6 @@ const PutObjectUrl = async (req, res) => {
             })
         );
 
-    
         return res.status(200).json({
             message: "Presigned URL generated successfully",
             status: "success",
@@ -66,6 +65,25 @@ const PutObjectUrl = async (req, res) => {
 const getObjectUrl = async (req, res) => {
     try {
         const { fileKey } = req.params;
+
+        const checkInFileTable = await ddbDocClient.send(
+                new GetCommand({
+                    TableName: process.env.FILE_TABLE_NAME,
+                    Key:{
+                        fileKey:fileKey
+                    } 
+                })
+            )
+        
+        if(!checkInFileTable.Item){
+            return res.status(400).json({
+
+                message: "File does not exist in database",
+
+                status: "error"
+
+            })
+        }
 
         const command = new GetObjectCommand({
             Bucket: process.env.BUCKET_NAME,
