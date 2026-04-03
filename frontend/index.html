@@ -528,9 +528,9 @@
 
         const uploadResponse = await fetch(data.presignedUrl, {
           method: "PUT",
-          // headers: {
-          //   "Content-Type": contentType || "application/octet-stream"
-          // },
+          headers: {
+            "Content-Type": contentType || "application/octet-stream"
+          },
           body: file
         });
 
